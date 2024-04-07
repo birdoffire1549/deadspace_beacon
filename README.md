@@ -1,6 +1,8 @@
 # Deadspace Beacon
 
-This code was written for the ESP8266. The purpose of this code is to enable the ESP8266 to act as an adhoc network for devices to connect to, so that they can talk to eachother on that network but have no internet or network access except to other devices which are also  attached to that same network.
+This code was written for the ESP8266, using PlatformIO with the Arduino Framework. 
+
+The purpose of this code is to enable the ESP8266 to act as an adhoc network for devices to connect to, so that they can talk to eachother on that network but have no internet or network access except to other devices which are also  attached to that same network.
 
 In short... 
 
