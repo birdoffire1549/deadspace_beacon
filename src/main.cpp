@@ -18,31 +18,47 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServerSecure.h>
+#include "WebPages.h"
+#include "Settings.h"
 #include "ExampleSecrets.h"
 #include "Secrets.h" // <-- Your secrets here using vars: server_cert and server_key
 
-#ifndef AP_SSID
-  #define AP_SSID "Deadspace"
-  #define AP_PSK "Password" //"SetThePassword"
+#ifndef APP_VERSION
+  #define APP_VERSION "2.0.0"
 #endif
 
-const char *ssid = AP_SSID;
-const char *password = AP_PSK;
+const char *ssid = SSID;
+const char *password = PSK;
 
 BearSSL::ESP8266WebServerSecure webServer(443);
 BearSSL::ServerSessions serverCache(5);
 
+/* ***************** *
+ * Function Protypes *
+ * ***************** */
 IPAddress initWiFi();
 void initWebServer();
 String getServerStatusByNumber(int value);
+void endpointHandlerRoot();
+void endpointHandlerAdmin();
+void resourceNotFoundHandler();
 
+/**
+ * ## SETUP FUNCTION ##
+ * This is the setup function. 
+ * Per the Arduino Framework setup runs first and only once at the start 
+ * of the program just prior to the main looping part of the program.
+*/
 void setup() {
   system_update_cpu_freq(160);
   delay(1000);
   pinMode(2, OUTPUT);
   
-  Serial.begin(115200);
+  Serial.begin(SERIAL_SPEED);
   Serial.println();
+  Serial.println("===========================");
+  Serial.printf("Firmware Version: %s\n", APP_VERSION);
+  Serial.println("===========================\n");
   
   IPAddress myIp = initWiFi();
   initWebServer();
@@ -53,21 +69,40 @@ void setup() {
   digitalWrite(2, LOW);
 }
 
+/**
+ * ## LOOP FUNCTION ##
+ * This is the loop function.
+ * Per the Arduino Framework, this is where the primary execution of the
+ * software takes place. The loop function runs repeatedly as long as the
+ * device is active.
+*/
 void loop() {
   webServer.handleClient();
 }
 
+/**
+ * Function handles the initialization of the WiFi.
+ * 
+ * @returns Returns the device's IP Address.
+*/
 IPAddress initWiFi() {
   Serial.print("AP Setup in progress...");
-  WiFi.setHostname("deadspace");
+  WiFi.setHostname(HOST_NAME.c_str());
+  WiFi.softAPConfig(DEVICE_IP, GATEWAY_IP, SUBNET_MASK);
   WiFi.softAP(ssid, password);
   Serial.println("Complete.");
 
   return WiFi.softAPIP();
 }
 
+/**
+ * Handles the initialization of the internal SSL WebServer.
+ * 
+*/
 void initWebServer() {
   Serial.println("Initializing Web Server...");
+
+  /* Configure WebServer's SSL */
   Serial.println("Configuring SSL... ");
   #ifdef Secrets_h
     webServer.getServer().setRSACert(new BearSSL::X509List(server_cert), new BearSSL::PrivateKey(server_key));
@@ -85,16 +120,16 @@ void initWebServer() {
   webServer.getServer().setCache(&serverCache);
   Serial.println(F("SSL configuration Complete."));
   
+  /* Register Endpoints */
   Serial.println(F("Registering web endpoints..."));
-  webServer.on("/", [] () {
-      webServer.send(200, "text/html", "<html><body>Hello from WebServer8266!</body></html>");
-  });
-  webServer.onNotFound([] () {
-      webServer.send(404, "text/plain", "Oops, Not Found!!!");
-  });
+  webServer.on("/", HTTP_GET, endpointHandlerRoot);
+  webServer.on("/admin", endpointHandlerAdmin);
+  webServer.onNotFound(resourceNotFoundHandler);
   Serial.println(F("Endpoint registration Complete."));
+
   Serial.println(F("Web Server initialization Complete."));
 
+  /* Start WebServer */
   Serial.println(F("\nStarting Web Server..."));
   webServer.begin();
   Serial.printf("Web Server started with a status code of '%s'.\n", getServerStatusByNumber(webServer.getServer().status()).c_str());
@@ -102,6 +137,14 @@ void initWebServer() {
   Serial.println("\nWeb Server startup is complete.");
 }
 
+/**
+ * UTILITY FUNCTION
+ * This function acts as a utility for deriving the human readable 
+ * name of a status given its numeric value.
+ * 
+ * @param value The value to fetch the name of as int.
+ * @returns The name of the value as a String.
+*/
 String getServerStatusByNumber(int value) {
   switch (value) {
     case 0:
@@ -129,4 +172,46 @@ String getServerStatusByNumber(int value) {
     default:
       return "UNKNOWN";
   }
+}
+
+/**
+ * #### ENDPOINT HANDLER "/" ####
+ * This is the endpoint handler function for calls to the Root.
+ * 
+*/
+void endpointHandlerRoot() {
+  String rootPage = ROOT_PAGE;
+
+  rootPage.replace("${rootWebTitle}", ROOT_WEB_TITLE);
+  rootPage.replace("${hostName}", HOST_NAME);
+  rootPage.replace("${firmwareVersion}", APP_VERSION);
+  rootPage.replace("${chipId}", String(ESP.getChipId()));
+  rootPage.replace("${coreVersion}", ESP.getCoreVersion());
+  rootPage.replace("${cpuFreq}", String(ESP.getCpuFreqMHz()));
+  rootPage.replace("${freeHeap}", String(((float)ESP.getFreeHeap()) / (float)1000));
+
+  webServer.send(200, "text/html", rootPage);
+}
+
+/**
+ * #### ENDPOINT HANDLER "/admin" ####
+ * This is the endpoint handler function for calls to the /admin path.
+ * 
+*/
+void endpointHandlerAdmin() {
+  // FIXME: Lots of work to do here...
+  String loginPage = LOGIN_PAGE;
+  String adminPage = "";
+
+  webServer.send(200, "text/html", loginPage);
+}
+
+/**
+ * #### RESOURCE NOT FOUND ####
+ * This function handles the response whenever a request is made to the WebServer
+ * for a resource that doesn't exist.
+ * 
+*/
+void resourceNotFoundHandler() {
+  webServer.send(404, "text/html", NOT_FOUND_PAGE);
 }
