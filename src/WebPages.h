@@ -27,29 +27,7 @@
         "  </body>"
         "</html>"
     ;
-
-    const String LOGIN_PAGE = ""
-        "<!DOCTYPE HTML>"
-        "<html lang=\"en\">"
-        "  <head>"
-        "    <title>Admin Login</title>"
-        "    <style>"
-        "      .info {background-color: #e7f3fe; border-left: 6px solid #2196F3;}"
-        "    </style>"
-        "  </head>"
-        "  <body>"
-        "    <div class=\"info\">"
-        "      <p><strong>Info!</strong> This page is not functional in this firmware version!</p>"
-        "    </div>"
-        "    <form name=\"login\" method=\"post\" id=\"login\" action=\"admin\"> "
-        "      Password: <input type=\"password\" name=\"adminpwd\" id=\"adminpwd\">"
-        "      <br> "
-        "      <button type=\"submit\">Submit</button> <a href='/'><h4>Home</h4></a>"
-        "    </form>"
-        "  </body>"
-        "</html>"
-    ;
-
+    
     const String ADMIN_PAGE = ""
         "<!DOCTYPE HTML>"
         "<html lang=\"en\">"

@@ -199,11 +199,15 @@ void endpointHandlerRoot() {
  * 
 */
 void endpointHandlerAdmin() {
-  // FIXME: Lots of work to do here...
-  String loginPage = LOGIN_PAGE;
-  String adminPage = "";
+  if (!webServer.authenticate("admin", "admin")) {
+    return webServer.requestAuthentication(DIGEST_AUTH, "AdminRealm" , "Authentication Failed!");
+  } // ELSE: User is authenticated...
 
-  webServer.send(200, "text/html", loginPage);
+  String adminPage = ADMIN_PAGE;
+  
+  // FIXME: MODIFY THE ADMIN_PAGE!!!
+
+  webServer.send(200, "text/html", adminPage);
 }
 
 /**
